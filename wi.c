@@ -64,10 +64,6 @@ const unsigned int ve_tbl[N_P_BRPOINTS][N_RPM_BRPOINTS] = {
 	/*           - rpm +          */
 };
 
-
-/* global variables */
-unsigned int dc_tbl[N_P_BRPOINTS][N_RPM_BRPOINTS]; /* duty cycle table to be populated */
-
 /* function definitions */
 
 int
