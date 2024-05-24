@@ -21,11 +21,11 @@
 
 #define N_P_BRPOINTS 11
 #define N_RPM_BRPOINTS 8
-#define V_DISP 2000e-3 /* displaced volume [m^3] */
+#define V_DISP 2000e-6 /* displaced volume [m^3] */
 #define T_REF 323.15 /* reference air temperature [K] */
 #define ROH_W_REF  997.0 /* reference water density at T=25*C [kg/m^3] */
 #define P_W_REF 689475.7 /* reference water pressure [Pa] */
-#define V_RATE_MAX_W_REF 0.000066666666666668 /* maximum water flow rate at P_W_REF [m^3/s] */
+#define V_RATE_MAX_W_REF (340e-6/60) /* maximum water flow rate at P_W_REF [m^3/s] */
 
 /* types */
 
@@ -102,7 +102,7 @@ main(int argc, char *argv[]) {
 /* duty cycle (0-100) at air pressure p [Pa], air temperature t [K], and engine speed s [rpm] */
 unsigned int
 duty_cycle(double p, double t, unsigned int s) {
-	return m_rate_w(p, t, s) / ROH_W_REF / V_RATE_MAX_W_REF;
+	return 100.0 * m_rate_w(p, t, s) / ROH_W_REF / V_RATE_MAX_W_REF;
 }
 
 /* mass flow rate of water at air pressure p [Pa], air temperature t [K], and engine speed s [rpm] */
