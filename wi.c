@@ -187,17 +187,15 @@ eq_specific_water_content(double p, double t) {
 	return A_W * p_eq/(p - p_eq);
 }
 
-/* equilibrium vapor pressure [Pa] at temperature t [K] according to Wexler 1976 */
+/* saturation vapor pressure [Pa] at temperature t [K] according to Hyland & Wexler 1983 */
 double
 eq_vapor_pressure(double t) {
-	return 1.0
-		/ exp(2.9912729e3 / pow(t, 2))
-		/ exp(6.0170128e3 / t)
-		* exp(1.887643845e1)
-		/ exp(2.8354721e-2 * t)
-		* exp(1.7838301e-5 * pow(t, 2))
-		/ exp(8.4150417e-10 * pow(t, 3))
-		* exp(4.4412543e-13 * pow(t, 4))
-		* exp(2.858487 * log(t));
+	return exp(
+		- 0.58002206e4/t
+		+ 0.13914993e1
+		- 0.48640239e-1*t
+		+ 0.41764768e-4*pow(t, 2)
+		- 0.14452093e-7*pow(t, 3)
+		+ 0.65459673e1*log(t));
 }
 
