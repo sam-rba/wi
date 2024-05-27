@@ -49,7 +49,7 @@ double eq_specific_water_content(double p, double t);
 
 /* global constants */
 const double p_brpoints[N_P_BRPOINTS] = {500e2, 750e2, 1000e2, 1250e2, 1500e2, 1750e2, 2000e2, 2250e2, 2500e2, 2750e2, 3000e2};
-const unsigned int rpm_brpoints[N_RPM_BRPOINTS] = {1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000};
+const double rpm_brpoints[N_RPM_BRPOINTS] = {1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000};
 const unsigned int ve_tbl[N_P_BRPOINTS][N_RPM_BRPOINTS] = {
 	{75, 80, 85, 90, 95, 95, 93, 90},
 	{75, 80, 85, 90, 95, 95, 93, 90},
@@ -108,7 +108,7 @@ main(int argc, char *argv[]) {
 	}
 	printf("%4s ", "");
 	for (j = 0; j < N_RPM_BRPOINTS; j++) {
-		printf("%4d ", rpm_brpoints[j]);
+		printf("%4d ", (int) rpm_brpoints[j]);
 	}
 	putchar('\n');
 }
@@ -140,36 +140,17 @@ m_rate_air(double p, double t, unsigned int s) {
 double
 ve(double p, unsigned int s) {
 	size_t i, j;
-	double *xa, *ya, *za;
+	double *za;
 
-	/* allocate axes */
-	if (!(xa = calloc(N_RPM_BRPOINTS, sizeof(double)))) {
-		fprintf(stderr, "failed to allocate x-axis\n");
-		return 0.0;
-	}
-	if (!(ya = calloc(N_P_BRPOINTS, sizeof(double)))) {
-		fprintf(stderr, "failed to allocate y-axis\n");
-		free(xa);
-		return 0.0;
-	}
 	if (!(za = calloc(N_RPM_BRPOINTS*N_P_BRPOINTS, sizeof(double)))) {
 		fprintf(stderr, "failed to allocate z values\n");
-		free(xa);
-		free(ya);
 		return 0.0;
-	}
-	/* copy axis values */
-	for (i = 0; i < N_RPM_BRPOINTS; i++) {
-		xa[i] = (double) rpm_brpoints[i];
-	}
-	for (i = 0; i < N_P_BRPOINTS; i++) {
-		ya[i] = p_brpoints[i];
 	}
 
 	/* initialize interpolator */
 	const gsl_interp2d_type *interpt = gsl_interp2d_bilinear;
 	gsl_interp2d *interp = gsl_interp2d_alloc(interpt, N_RPM_BRPOINTS, N_P_BRPOINTS);
-	(void) gsl_interp2d_init(interp, xa, ya, za, N_RPM_BRPOINTS, N_P_BRPOINTS);
+	(void) gsl_interp2d_init(interp, rpm_brpoints, p_brpoints, za, N_RPM_BRPOINTS, N_P_BRPOINTS);
 	gsl_interp_accel *xacc = gsl_interp_accel_alloc();
 	gsl_interp_accel *yacc = gsl_interp_accel_alloc();
 	/* copy ve table to za */
@@ -180,13 +161,11 @@ ve(double p, unsigned int s) {
 	}
 
 	/* interpolate table */
-	double res = gsl_interp2d_eval_extrap(interp, xa, ya, za, s, p, xacc, yacc);
+	double res = gsl_interp2d_eval_extrap(interp, rpm_brpoints, p_brpoints, za, s, p, xacc, yacc);
 
 	gsl_interp2d_free(interp);
 	gsl_interp_accel_free(xacc);
 	gsl_interp_accel_free(yacc);
-	free(xa);
-	free(ya);
 	free(za);
 
 	return res;
