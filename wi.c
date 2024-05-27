@@ -2,6 +2,7 @@
 #include <math.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multiroots.h>
+#include <gsl/gsl_interp2d.h>
 
 #define CP_DFM CP_AIR /* specific heat of dry mixture at constant pressure at 273K [kJ/(kg*K)]
 						 --- CP_DFM=CP_AIR assumes no fuel */
@@ -62,6 +63,19 @@ const unsigned int ve_tbl[N_P_BRPOINTS][N_RPM_BRPOINTS] = {
 	{75, 80, 85, 90, 95, 95, 93, 90},
 	{75, 80, 85, 90, 95, 95, 93, 90}
 	/*           - rpm +          */
+};
+const double w_eq_ratio[N_P_BRPOINTS][N_RPM_BRPOINTS] = {
+	{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+	{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+	{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+	{0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5},
+	{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+	{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+	{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+	{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+	{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+	{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+	{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}
 };
 
 /* function definitions */
@@ -125,8 +139,57 @@ m_rate_air(double p, double t, unsigned int s) {
 /* volumetric efficiency at air pressure p [Pa] and engine speed s [rpm] */
 double
 ve(double p, unsigned int s) {
-	/* TODO */
-	return 1.0;
+	size_t i, j;
+	double *xa, *ya, *za;
+
+	/* allocate axes */
+	if (!(xa = calloc(N_RPM_BRPOINTS, sizeof(double)))) {
+		fprintf(stderr, "failed to allocate x-axis\n");
+		return 0.0;
+	}
+	if (!(ya = calloc(N_P_BRPOINTS, sizeof(double)))) {
+		fprintf(stderr, "failed to allocate y-axis\n");
+		free(xa);
+		return 0.0;
+	}
+	if (!(za = calloc(N_RPM_BRPOINTS*N_P_BRPOINTS, sizeof(double)))) {
+		fprintf(stderr, "failed to allocate z values\n");
+		free(xa);
+		free(ya);
+		return 0.0;
+	}
+	/* copy axis values */
+	for (i = 0; i < N_RPM_BRPOINTS; i++) {
+		xa[i] = (double) rpm_brpoints[i];
+	}
+	for (i = 0; i < N_P_BRPOINTS; i++) {
+		ya[i] = p_brpoints[i];
+	}
+
+	/* initialize interpolator */
+	const gsl_interp2d_type *interpt = gsl_interp2d_bilinear;
+	gsl_interp2d *interp = gsl_interp2d_alloc(interpt, N_RPM_BRPOINTS, N_P_BRPOINTS);
+	(void) gsl_interp2d_init(interp, xa, ya, za, N_RPM_BRPOINTS, N_P_BRPOINTS);
+	gsl_interp_accel *xacc = gsl_interp_accel_alloc();
+	gsl_interp_accel *yacc = gsl_interp_accel_alloc();
+	/* copy ve table to za */
+	for (j = 0; j < N_P_BRPOINTS; j++) {
+		for (i = 0; i < N_RPM_BRPOINTS; i++) {
+			(void) gsl_interp2d_set(interp, za, i, j, ve_tbl[j][i]/100.0);
+		}
+	}
+
+	/* interpolate table */
+	double res = gsl_interp2d_eval_extrap(interp, xa, ya, za, s, p, xacc, yacc);
+
+	gsl_interp2d_free(interp);
+	gsl_interp_accel_free(xacc);
+	gsl_interp_accel_free(yacc);
+	free(xa);
+	free(ya);
+	free(za);
+
+	return res;
 }
 
 /* specific enthalpy of mixture h [kJ/kg] at temperature t [K] and specific water content w */
