@@ -1,0 +1,12 @@
+This program calculates properties of the charge mixture in an internal combusion
+engine with indirect water injection.  It is currently in a very unpolished state and
+should not be used for anything serious.
+
+Reference:
+Vaudrey, A. "Thermodynamics of indirect water injection in internal
+combustion engines: Analysis of the fresh mixture cooling effect" in International
+Journal of Engine Research 2019, Vol 20(5) 527-539.
+
+See Also:
+https://github.com/avaudrey/Py-ICE-WaterInjection
+
